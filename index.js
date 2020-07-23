@@ -1,4 +1,5 @@
 let users = [];
+let countriesFlags = {}
 // let usersLanguage = []
 DOM = {};
 const displayFunctions = {
@@ -7,12 +8,20 @@ const displayFunctions = {
 };
 
 (async function () {
-    users = await getAllUsers()
-    // usersLanguage = await getUsersLanguage()
+    countriesFlags = await getAllCountries()
+    console.log(countriesFlags)
+    DOM.selectNumberOfUsers = document.getElementById("selectNumberOfUsers")
+    let selectedNumber = getFromLocalStorage("selectedNumber")
+    DOM.selectNumberOfUsers.value = selectedNumber
+    users = await getUsers(selectedNumber)
     DOM.containerDiv = $('#containerDiv')
     DOM.tBody = $("#mainTbody")
-    console.log(users)
-    // console.log(usersLanguage)
+    DOM.selectNumberOfUsers.addEventListener("change", async (e) => {
+        const { value } = e.target
+        users = await getUsers(value)
+        saveToLocalStorage("selectedNumber", value)
+        draw(users, DOM.tBody, "table")
+    })
     draw(users, DOM.tBody, "table")
 
 }())
@@ -21,19 +30,22 @@ function draw(data, container, displayType) {
     if (!Array.isArray(data)) return
     if (typeof container !== "object") return
     if (typeof displayType !== "string") return
+    clearDom()
     const relevantFunction = displayFunctions[displayType]
     data.forEach(user => {
         container.append(relevantFunction(user))
     })
+}
 
+function clearDom() {
+    DOM.tBody.html("")
 }
 
 function drawRow(userData) {
     const { gender, name, email, location } = userData
     const { first, last } = name
     const { city, country } = location
-
-
+    const flag = countriesFlags[country] ? countriesFlags[country] : "./src/noImage.jpg"
 
     let mainTr = document.createElement('tr')
     DOM.tBody.append(mainTr)
@@ -62,14 +74,22 @@ function drawRow(userData) {
     mainTd5.innerHTML = country
     mainTr.append(mainTd5)
 
+    let mainTd6 = document.createElement("td")
+    mainTr.append(mainTd6)
+
+    let countryFlag = document.createElement("img")
+    countryFlag.src = flag
+    countryFlag.style = "width:30px;height:30px"
+
+    mainTd6.append(countryFlag)
 
     return mainTr
 }
 
+function saveToLocalStorage(key, value) {
+    localStorage.setItem(key, value)
+}
 
-// <tr>
-//     <td>user.name</td>
-//     <td>user.lastName</td>
-//     <td>user.gender</td>
-// </tr>
-
+function getFromLocalStorage(key) {
+    return localStorage.getItem(key)
+}
